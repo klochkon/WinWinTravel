@@ -1,0 +1,46 @@
+services:
+
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=WinWinTravel
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  data-api:
+    build:
+      context: ./data-api
+      dockerfile: Dockerfile
+    container_name: data-api
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - INTERNAL_TOKEN=${INTERNAL_TOKEN}
+
+  auth-api:
+    build:
+      context: ./auth-api
+      dockerfile: Dockerfile
+    container_name: auth-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - POSTGRES_URL=jdbc:postgresql://postgres-db:5432/WinWinTravel
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SERVICE_B_URL=http://data-api:8081
+      - INTERNAL_TOKEN=${INTERNAL_TOKEN}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres-db
+      - data-api
+
+volumes:
+  postgres-data: {}
